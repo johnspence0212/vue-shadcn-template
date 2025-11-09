@@ -1,194 +1,184 @@
-# Backend
+# Backend API
 
-.NET Console Application with Entity Framework Core and SQLite for the Bookish Dollop personal finance application.
+ASP.NET Core Web API with Entity Framework Core and SQLite.
 
-## Current Structure
+## 🚀 Quick Start
+
+1. **Navigate to the API folder:**
+
+   ```bash
+   cd backend/Api
+   ```
+
+2. **Restore dependencies:**
+
+   ```bash
+   dotnet restore
+   ```
+
+3. **Run the application:**
+
+   ```bash
+   dotnet run
+   ```
+
+4. **Access Swagger UI:**
+   Open `http://localhost:5000/swagger` in your browser
+
+## 📁 Project Structure
 
 ```
-backend/
-├── Api/
-│   ├── Models/
-│   │   ├── BaseEntity.cs         # Base class with Id and CreatedAt
-│   │   ├── Enums.cs              # Application enumerations
-│   │   └── Income.cs             # Income entity
-│   ├── Data/
-│   │   ├── AppDbContext.cs       # Main database context
-│   │   └── Configurations/
-│   │       ├── BaseEntityConfiguration.cs
-│   │       └── IncomeConfiguration.cs
-│   ├── Program.cs                # Application entry point
-│   └── Api.csproj
-└── README.md
+backend/Api/
+├── Controllers/
+│   └── BaseController.cs         # Generic CRUD controller
+├── Data/
+│   ├── AppDbContext.cs          # Database context
+│   └── Configurations/
+│       └── BaseEntityConfiguration.cs
+├── Extensions/
+│   └── ServiceCollectionExtensions.cs  # DI setup
+├── Models/
+│   └── BaseEntity.cs            # Base class with Id/CreatedAt
+├── Program.cs                    # Entry point
+├── appsettings.json             # Configuration
+└── Api.csproj
 ```
 
-## Getting Started
+## ⚙️ Configuration
 
-1. Navigate to Api folder: `cd Api`
-2. Restore dependencies: `dotnet restore`
-3. Run the application: `dotnet run`
+### Database Settings
 
-## Database
+Edit `appsettings.json` to configure your database:
 
-- **Provider**: SQLite
-- **Database File**: `finance.db` (created automatically)
-- **ORM**: Entity Framework Core
-
-## Adding New Database Entities
-
-Follow these 3 steps to add a new entity to the database:
-
-### 1. Model Creation
-
-Create your model in `Models/` folder inheriting from `BaseEntity`:
-
-```csharp
-// Models/Expense.cs
-namespace Api.Models;
-
-public class Expense : BaseEntity
+```json
 {
-    public string Description { get; set; } = string.Empty;
-    public decimal Amount { get; set; }
-    public ExpenseCategory Category { get; set; } // Add to Enums.cs if needed
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=budget.db" // Change database name here
+  },
+  "FrontendUrl": "http://localhost:5173"
 }
 ```
 
-**Note**: `BaseEntity` provides `Id` (int) and `CreatedAt` (DateTime) automatically.
+**Database Provider:** SQLite (no installation required)  
+**Database File:** Created automatically in `backend/Api/` folder
 
-### 2. Configuration Creation
+## 📦 Adding a New Entity
 
-Create Entity Framework configuration in `Data/Configurations/`:
+Follow these 3 simple steps:
+
+### Step 1: Create the Model
+
+Create your model in `Models/` folder, inheriting from `BaseEntity`:
 
 ```csharp
-// Data/Configurations/ExpenseConfiguration.cs
+// Models/Task.cs
+namespace Api.Models;
+
+public class Task : BaseEntity
+{
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public bool IsCompleted { get; set; }
+    public DateTime? DueDate { get; set; }
+}
+```
+
+> **Note:** `BaseEntity` automatically provides `Id` (int) and `CreatedAt` (DateTime)
+
+### Step 2: Configure the Entity
+
+Create a configuration file in `Data/Configurations/`:
+
+```csharp
+// Data/Configurations/TaskConfiguration.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Api.Models;
 
 namespace Api.Data.Configurations;
 
-public class ExpenseConfiguration : BaseEntityConfiguration<Expense>
+public class TaskConfiguration : BaseEntityConfiguration<Task>
 {
-    public override void Configure(EntityTypeBuilder<Expense> builder)
+    public override void Configure(EntityTypeBuilder<Task> builder)
     {
-        // Call base to configure Id and CreatedAt
-        base.Configure(builder);
+        base.Configure(builder);  // Configures Id and CreatedAt
 
-        // Entity-specific configurations
-        builder.Property(e => e.Description)
+        builder.Property(t => t.Title)
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(e => e.Amount)
-            .HasColumnType("decimal(18,2)")
-            .IsRequired();
+        builder.Property(t => t.Description)
+            .HasMaxLength(1000);
 
-        builder.Property(e => e.Category)
-            .HasConversion<int>()  // Store enum as integer
-            .IsRequired();
-
-        // Optional: Set table name explicitly
-        builder.ToTable("Expenses");
+        builder.ToTable("Tasks");
     }
 }
 ```
 
-### 3. AppDbContext Update
+**Common Configuration Patterns:**
 
-Add your entity as a DbSet in `Data/AppDbContext.cs`:
+- `IsRequired()` - Makes property non-nullable
+- `HasMaxLength(n)` - Sets max string length
+- `HasColumnType("decimal(18,2)")` - For money/decimal values
+- `HasConversion<int>()` - Stores enums as integers
+- `ToTable("Name")` - Sets table name
+
+### Step 3: Add DbSet to Context
+
+Add your entity to `Data/AppDbContext.cs`:
 
 ```csharp
 public class AppDbContext : DbContext
 {
-    // ... existing code ...
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public DbSet<Income> Incomes { get; set; }
-    public DbSet<Expense> Expenses { get; set; }  // Add this line
+    // Add your new DbSet here
+    public DbSet<Task> Tasks { get; set; }
 
-    // ... rest of class ...
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Configurations are auto-discovered
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+    }
 }
 ```
 
-**That's it!** The configuration is automatically discovered and applied thanks to:
+**Done!** Restart the app and your new table will be created automatically.
 
-```csharp
-modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+## 🔄 Updating the Database
+
+When you add or modify entities:
+
+### Development (Quick Reset)
+
+```bash
+# Delete the database file
+rm budget.db
+
+# Restart the app - database recreates automatically
+dotnet run
 ```
 
-### Configuration Guidelines
+### Production (Migrations - Coming Soon)
 
-- **Inherit from BaseEntityConfiguration<T>** to get Id and CreatedAt setup automatically
-- **Use HasMaxLength()** for string properties to set database column limits
-- **Use HasColumnType("decimal(18,2)")** for money amounts
-- **Use HasConversion<int>()** for enums to store as integers
-- **Use IsRequired()** for non-nullable properties
-- **Use ToTable()** to explicitly set table names
+For preserving data in production, you'll want to use EF Core migrations:
 
-## Updating Database Schema
+```bash
+dotnet tool install --global dotnet-ef
+dotnet ef migrations add YourMigrationName
+dotnet ef database update
+```
 
-When you modify entity configurations or models, you need to update your database. Here are two approaches:
+> **Current Setup:** Uses `EnsureCreatedAsync()` for simplicity - perfect for development!
 
-### Option 1: Fresh Start (Recommended for Development)
+## 🎮 Adding a Controller
 
-Best for early development when you don't have important data:
+Controllers are automatically generated with full CRUD operations using `BaseController<T>`.
 
-1. **Delete the existing database:**
-
-   ```bash
-   # From the Api directory
-   rm budget.db
-   ```
-
-2. **Run the application:**
-
-   ```bash
-   dotnet run
-   ```
-
-3. **New database created** with updated schema automatically!
-
-### Option 2: Entity Framework Migrations (Production Ready)
-
-Use this approach when you have data you want to preserve:
-
-1. **Install EF Tools globally (if not already installed):**
-
-   ```bash
-   dotnet tool install --global dotnet-ef
-   ```
-
-2. **Create a migration for your changes:**
-
-   ```bash
-   # From the Api directory
-   dotnet ef migrations add YourMigrationName
-   ```
-
-3. **Apply the migration:**
-
-   ```bash
-   dotnet ef database update
-   ```
-
-4. **Your database is updated** while preserving existing data!
-
-### When to Use Each Approach
-
-- **Option 1 (Fresh Start)**: Early development, no important data, major schema changes
-- **Option 2 (Migrations)**: Production environment, existing data, collaborative development
-
-**Note**: The project currently uses `EnsureCreatedAsync()` for simplicity. For production applications, consider switching to migrations for better control and data preservation.
-
-## Controllers & API Endpoints
-
-The API uses a generic base controller pattern that automatically provides full CRUD operations for any entity.
-
-### Adding New Controllers
-
-To create a new API controller for an entity, simply inherit from `BaseController<T>`:
+### Create a Controller
 
 ```csharp
-// Controllers/ExpenseController.cs
+// Controllers/TaskController.cs
 using Api.Data;
 using Api.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -196,116 +186,134 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.Controllers;
 
 [Route("api/[controller]")]
-public class ExpenseController : BaseController<Expense>
+public class TaskController : BaseController<Task>
 {
-    public ExpenseController(AppDbContext context) : base(context)
-    {
-    }
+    public TaskController(AppDbContext context) : base(context) { }
 
-    // All CRUD operations are inherited automatically!
-    // Override any method for custom behavior if needed
+    // That's it! All CRUD endpoints are inherited automatically
 }
 ```
 
-### Automatic API Endpoints
+### Automatic Endpoints
 
-Each controller inheriting from `BaseController<T>` automatically gets these endpoints:
+Your controller instantly gets these REST endpoints:
 
-| Method | Endpoint                 | Description       |
-| ------ | ------------------------ | ----------------- |
-| GET    | `/api/{controller}`      | Get all entities  |
-| GET    | `/api/{controller}/{id}` | Get entity by ID  |
-| POST   | `/api/{controller}`      | Create new entity |
-| PUT    | `/api/{controller}/{id}` | Update entity     |
-| DELETE | `/api/{controller}/{id}` | Delete entity     |
+| Method | Endpoint         | Description    |
+| ------ | ---------------- | -------------- |
+| GET    | `/api/task`      | Get all tasks  |
+| GET    | `/api/task/{id}` | Get task by ID |
+| POST   | `/api/task`      | Create task    |
+| PUT    | `/api/task/{id}` | Update task    |
+| DELETE | `/api/task/{id}` | Delete task    |
 
-### Example: Income API
+### Testing Your API
 
-- `GET /api/income` - Get all incomes
-- `GET /api/income/1` - Get income with ID 1
-- `POST /api/income` - Create new income
-- `PUT /api/income/1` - Update income with ID 1
-- `DELETE /api/income/1` - Delete income with ID 1
+**Option 1: Swagger UI (Recommended)**
 
-### Testing the API
+1. Run `dotnet run`
+2. Visit `http://localhost:5000/swagger`
+3. Test all endpoints interactively
 
-1. **Start the API:**
+**Option 2: HTTP Client**
 
-   ```bash
-   dotnet run
-   ```
+```http
+# Create a task
+POST http://localhost:5000/api/task
+Content-Type: application/json
 
-2. **Swagger UI:** Visit `http://localhost:5000/swagger` for interactive API documentation
+{
+  "title": "Complete README",
+  "isCompleted": false
+}
+```
 
-3. **Postman Example - Create Income:**
+### Custom Endpoints (Optional)
 
-   ```
-   POST http://localhost:5000/api/income
-   Content-Type: application/json
-
-   {
-     "name": "John's Salary",
-     "amount": 5000,
-     "type": 1
-   }
-   ```
-
-### Custom Controller Behavior
-
-Override base methods when you need custom logic:
+Add custom logic when needed:
 
 ```csharp
-public class IncomeController : BaseController<Income>
+public class TaskController : BaseController<Task>
 {
-    public IncomeController(AppDbContext context) : base(context) { }
+    public TaskController(AppDbContext context) : base(context) { }
 
-    // Override for custom validation
-    public override async Task<ActionResult<Income>> Post(Income income)
+    // Add custom endpoint
+    [HttpGet("completed")]
+    public async Task<ActionResult<IEnumerable<Task>>> GetCompleted()
     {
-        // Custom logic here
-        if (income.Amount <= 0)
-            return BadRequest("Amount must be positive");
-
-        return await base.Post(income); // Call base implementation
+        var completed = await _dbSet
+            .Where(t => t.IsCompleted)
+            .ToListAsync();
+        return Ok(completed);
     }
 
-    // Add custom endpoints
-    [HttpGet("total")]
-    public async Task<ActionResult<decimal>> GetTotalIncome()
+    // Override base behavior
+    public override async Task<ActionResult<Task>> Post(Task task)
     {
-        return await _dbSet.SumAsync(i => i.Amount);
+        // Add validation
+        if (string.IsNullOrWhiteSpace(task.Title))
+            return BadRequest("Title is required");
+
+        return await base.Post(task);
     }
 }
 ```
 
-### BaseController Features
+## 🛠️ Tech Stack
 
-- ✅ **Generic CRUD operations** for any `BaseEntity`
-- ✅ **Proper HTTP status codes** (200, 201, 400, 404)
-- ✅ **Entity Framework integration**
-- ✅ **Concurrency handling**
-- ✅ **Virtual methods** for easy overriding
-- ✅ **Automatic route generation**
+- **.NET 9.0** - Modern web framework
+- **Entity Framework Core** - ORM
+- **SQLite** - Lightweight database
+- **Swagger** - API documentation
 
-## Technologies
+## 🏗️ Architecture Features
 
-- **.NET 9.0**
-- **Entity Framework Core 9.0**
-- **SQLite**
-- **C# 12**
+- ✅ **Generic Base Controller** - Instant CRUD for any entity
+- ✅ **Base Entity Pattern** - Consistent Id/CreatedAt across all models
+- ✅ **Configuration Classes** - Clean EF Core setup
+- ✅ **Dependency Injection** - Organized service registration
+- ✅ **CORS Configured** - Ready for frontend integration
+- ✅ **Swagger UI** - Interactive API testing
 
-## Features
+## 📝 Common Tasks
 
-### Current
+### Change Database Name
 
-- Income tracking with Regular/Additional types
-- SQLite database with EF Core
-- Clean architecture with separated configurations
-- Base entity pattern for common properties
+Edit `appsettings.json`:
 
-### Planned
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Data Source=myapp.db"
+}
+```
 
-- Expense tracking
-- Budget management
-- Category system
-- Reporting capabilities
+### Change Frontend URL
+
+Edit `appsettings.json`:
+
+```json
+"FrontendUrl": "http://localhost:3000"
+```
+
+### Add New Service
+
+Edit `Extensions/ServiceCollectionExtensions.cs`:
+
+```csharp
+public static IServiceCollection AddApiServices(...)
+{
+    // Add your services here
+    services.AddScoped<IMyService, MyService>();
+
+    return services;
+}
+```
+
+## 🚦 Getting Help
+
+- **Swagger UI:** `http://localhost:5000/swagger` - View all endpoints
+- **Database File:** Located in `backend/Api/` folder
+- **Logs:** Check console output when running the app
+
+---
+
+**Happy Coding! 🎉**

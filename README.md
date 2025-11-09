@@ -1,208 +1,200 @@
-# Vue 3 + shadcn-vue Sidebar Template
+# Vue + .NET Full Stack Template
 
-A clean, production-ready Vue 3 starter template with:
+A modern, production-ready full-stack application template with Vue 3 frontend and .NET 9 backend.
 
-- ✅ **shadcn-vue** components (Sidebar, Button, Input, etc.)
-- ✅ **Tailwind CSS v4** for styling
-- ✅ **Vue Router** for navigation
-- ✅ **Breadcrumbs** that auto-update based on route
-- ✅ **TypeScript** for type safety
-- ✅ **Pinia** for state management
-- ✅ **Vitest** for testing
+## 🎯 Purpose
 
-## What's Included
+This template provides a complete foundation for building full-stack web applications with:
 
-### Layout
-- Collapsible sidebar with shadcn-vue components
-- Responsive header with breadcrumbs
-- Clean white dashboard with black text
-- Mobile-responsive design
+- **Frontend:** Vue 3 + TypeScript + shadcn-vue + Tailwind CSS
+- **Backend:** .NET 9 Web API + Entity Framework Core + SQLite
+- **Ready-to-use:** Generic CRUD operations, routing, state management, and API integration
+- **Developer-friendly:** Clear structure, best practices, and comprehensive documentation
 
-### Pages (Examples)
-- Home (with nested example: Home > Details)
-- Inbox
-- Calendar
-- Search
-- Settings
+Perfect for quickly starting new projects without the boilerplate setup hassle.
 
-### Project Structure
+## 📁 Project Structure
+
 ```
-src/
-├── components/
-│   ├── AppSidebar.vue          # Main sidebar component
-│   └── ui/                      # shadcn-vue components
-├── views/                       # Page components
-│   ├── HomeView.vue
-│   ├── HomeDetailsView.vue
-│   └── ...
-├── router/
-│   └── index.ts                 # Route configuration
-├── stores/                      # Pinia stores
-└── style.css                    # Tailwind + theme config
+vue-shadcn-template/
+├── frontend/                    # Vue 3 application
+│   ├── src/
+│   │   ├── api/                # API client & types
+│   │   ├── components/         # Vue components
+│   │   │   ├── common/         # Shared components
+│   │   │   └── ui/             # shadcn-vue components
+│   │   ├── views/              # Page components
+│   │   ├── router/             # Route definitions
+│   │   ├── stores/             # Pinia state management
+│   │   └── App.vue
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── README.md               # Frontend documentation
+│
+└── backend/                     # .NET 9 Web API
+    └── Api/
+        ├── Controllers/         # API endpoints
+        ├── Models/             # Entity models
+        ├── Data/               # Database context & config
+        ├── Extensions/         # Service registration
+        ├── Program.cs          # Entry point
+        ├── appsettings.json    # Configuration
+        └── README.md           # Backend documentation
 ```
 
-## Quick Start
+### Frontend Features
 
-### 1. Clone or Use as Template
+- ✅ Vue 3 with TypeScript
+- ✅ shadcn-vue UI components
+- ✅ Tailwind CSS v4
+- ✅ Vue Router
+- ✅ Pinia state management
+- ✅ Axios API client
+- ✅ Generic BaseApi class
 
-**Option A: Clone this repo**
-\`\`\`bash
-git clone <your-repo-url> my-new-project
-cd my-new-project
-\`\`\`
+### Backend Features
+
+- ✅ .NET 9 Web API
+- ✅ Entity Framework Core
+- ✅ SQLite database
+- ✅ Generic BaseController for CRUD
+- ✅ Swagger UI
+- ✅ CORS configured
+- ✅ Dependency injection pattern
+
+## 🚀 First Time Setup
+
+### Prerequisites
+
+- **Node.js** (v20.19.0 or v22.12.0+)
+- **.NET SDK** (v9.0+)
+- **Git**
+
+### 1. Get the Template
+
+**Option A: Clone this repository**
+
+```bash
+git clone https://github.com/johnspence0212/vue-shadcn-template.git my-project
+cd my-project
+```
 
 **Option B: Use as GitHub Template**
-1. Click "Use this template" button on GitHub
+
+1. Click the "Use this template" button on GitHub
 2. Create your new repository
-3. Clone your new repo
+3. Clone your new repository
 
-### 2. Install Dependencies
-\`\`\`bash
+### 2. Setup Frontend
+
+```bash
+cd frontend
 npm install
-\`\`\`
+```
 
-### 3. Run Development Server
-\`\`\`bash
+### 3. Setup Backend
+
+```bash
+cd backend/Api
+dotnet restore
+```
+
+**That's it!** The database will be created automatically on first run.
+
+## 🏃 Running the Application
+
+You need to run both frontend and backend servers simultaneously.
+
+### Terminal 1: Backend API
+
+```bash
+cd backend/Api
+dotnet run
+```
+
+The API will start at `http://localhost:5000`
+
+- Swagger UI: `http://localhost:5000/swagger`
+
+### Terminal 2: Frontend
+
+```bash
+cd frontend
 npm run dev
-\`\`\`
+```
 
-## How to Use
+The frontend will start at `http://localhost:5173`
 
-### Adding a New Page
+### Verify Connection
 
-1. **Create the view** in `src/views/MyPageView.vue`:
-\`\`\`vue
-<script setup lang="ts">
-// Your logic here
-</script>
+Open `http://localhost:5173` in your browser. The frontend is configured to communicate with the backend API.
 
-<template>
-  <div class="my-page-view">
-    <h1 class="text-3xl font-bold mb-4">My Page</h1>
-    <p class="text-gray-600">Content here</p>
-  </div>
-</template>
+## 📖 Using as a Template
 
-<style scoped>
-.my-page-view {
-  padding: 2rem;
-}
-</style>
-\`\`\`
+This template is designed to be cloned and customized for your own projects.
 
-2. **Add the route** in `src/router/index.ts`:
-\`\`\`typescript
-{
-  path: '/my-page',
-  name: 'my-page',
-  component: () => import('@/views/MyPageView.vue'),
-}
-\`\`\`
+### Quick Customization Checklist
 
-3. **Add to sidebar** in `src/components/AppSidebar.vue`:
-\`\`\`typescript
-import { MyIcon } from "lucide-vue-next"
+1. **Update project name** in `package.json` (frontend)
+2. **Configure database name** in `backend/Api/appsettings.json`
+3. **Update API URL** if needed in `frontend/src/api/base/client.ts`
+4. **Remove example views** and create your own
+5. **Add your entities** to the backend (see backend README)
+6. **Create corresponding API clients** in frontend (see frontend README)
 
-const items = [
-  // ... existing items
-  {
-    title: "My Page",
-    url: "/my-page",
-    icon: MyIcon,
-  },
-]
-\`\`\`
+### Detailed Documentation
 
-4. **Update breadcrumb mapping** in `src/App.vue`:
-\`\`\`typescript
-const routeInfo: Record<string, { label: string; icon: any }> = {
-  // ... existing routes
-  'my-page': { label: "My Page", icon: MyIcon },
-}
-\`\`\`
+Both frontend and backend have comprehensive READMEs with step-by-step guides:
 
-### Adding Nested Pages (Breadcrumbs)
+- **Frontend Guide:** [`frontend/README.md`](frontend/README.md)
 
-For pages like "Settings > Profile":
+  - Adding API integration
+  - Creating components
+  - Adding views and routes
+  - State management with Pinia
 
-\`\`\`typescript
-{
-  path: '/settings/profile',
-  name: 'settings-profile',
-  component: () => import('@/views/SettingsProfileView.vue'),
-  meta: {
-    breadcrumbs: [
-      { label: 'Settings', path: '/settings' },
-      { label: 'Profile', path: '/settings/profile' },
-    ],
-  },
-}
-\`\`\`
+- **Backend Guide:** [`backend/README.md`](backend/README.md)
+  - Adding entities
+  - Creating controllers
+  - Database configuration
+  - API documentation
 
-### Customizing Colors
+### Example Workflow: Adding a Feature
 
-Edit `src/style.css` to change the theme:
+1. **Backend:** Create entity → Create configuration → Add DbSet
+2. **Backend:** Create controller (inherits from BaseController)
+3. **Frontend:** Define TypeScript interface → Create API client
+4. **Frontend:** Create view component → Add route
+5. **Test:** Use Swagger UI for backend, browser for frontend
 
-\`\`\`css
-:root {
-  --background: #ffffff;    /* Main background */
-  --foreground: #000000;    /* Main text color */
-  --sidebar: #ffffff;       /* Sidebar background */
-  --sidebar-foreground: #000000; /* Sidebar text */
-  /* ... more variables */
-}
-\`\`\`
+## 🛠️ Tech Stack
 
-### Adding shadcn-vue Components
+### Frontend
 
-Use the shadcn-vue CLI:
+- Vue 3 + TypeScript
+- Vite
+- Vue Router
+- Pinia
+- Axios
+- shadcn-vue
+- Tailwind CSS v4
 
-\`\`\`bash
-npx shadcn-vue@latest add [component-name]
-\`\`\`
+### Backend
 
-Example:
-\`\`\`bash
-npx shadcn-vue@latest add card
-npx shadcn-vue@latest add dialog
-npx shadcn-vue@latest add dropdown-menu
-\`\`\`
+- .NET 9
+- ASP.NET Core Web API
+- Entity Framework Core
+- SQLite
+- Swagger/OpenAPI
 
-## Scripts
+## 🤝 Contributing
 
-\`\`\`bash
-npm run dev          # Start dev server
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run test:unit    # Run tests
-npm run lint         # Lint and fix files
-npm run format       # Format with Prettier
-\`\`\`
+Feel free to submit issues and enhancement requests!
 
-## Tech Stack
+## 📄 License
 
-- **Vue 3** - Progressive JavaScript framework
-- **TypeScript** - Type safety
-- **Vite** - Fast build tool
-- **Tailwind CSS v4** - Utility-first CSS
-- **shadcn-vue** - Beautiful, accessible components
-- **Vue Router** - Official Vue router
-- **Pinia** - Vue state management
-- **Vitest** - Fast unit testing
-- **lucide-vue-next** - Icon library
-
-## Tips
-
-- The sidebar automatically handles mobile responsiveness
-- Breadcrumbs update automatically based on route
-- All shadcn components use Tailwind classes
-- Use `<router-link>` for navigation to avoid page reloads
-- Icons come from lucide-vue-next (https://lucide.dev)
-
-## License
-
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**Happy coding! 🚀**
+**Ready to build something amazing! 🚀**
