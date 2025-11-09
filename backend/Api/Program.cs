@@ -1,30 +1,10 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Api.Data;
+using Api.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// Add Entity Framework with SQLite
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=budget.db"));
-
-// Add CORS for frontend
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy.WithOrigins("http://localhost:5173") // Vue dev server (fixed port)
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
-});
+// Add services using extension methods
+builder.Services.AddApiServices(builder.Configuration);
 
 var app = builder.Build();
 
@@ -35,22 +15,21 @@ using (var scope = app.Services.CreateScope())
     await context.Database.EnsureCreatedAsync();
 }
 
-// Configure the HTTP request pipeline
+// Configure middleware pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    Console.WriteLine("🌐 Swagger UI: http://localhost:5000/swagger");
 }
 
 app.UseCors("AllowFrontend");
+app.UseRouting();
 app.UseAuthorization();
 app.MapControllers();
 
 Console.WriteLine("🚀 Budget API Started!");
-Console.WriteLine("📊 Database: budget.db");
-if (app.Environment.IsDevelopment())
-{
-    Console.WriteLine("🌐 Swagger UI: http://localhost:5000/swagger");
-}
+Console.WriteLine($"📊 Database: {builder.Configuration.GetConnectionString("DefaultConnection") ?? "budget.db"}");
+Console.WriteLine($"� Allowing CORS from: {builder.Configuration.GetValue<string>("FrontendUrl") ?? "http://localhost:5173"}");
 
 app.Run();
