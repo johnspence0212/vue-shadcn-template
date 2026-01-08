@@ -65,3 +65,6 @@ obj/
 [Ll]ogs/
 .vs/
 TestResults/
+*.db
+*.db-shm
+*.db-wal
