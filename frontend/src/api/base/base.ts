@@ -1,4 +1,4 @@
-import type { BaseEntity } from '@/types/base'
+import type { BaseEntity } from '../types/base'
 import apiClient from './client'
 
 export class BaseApiService<T extends BaseEntity> {
