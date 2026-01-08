@@ -1,48 +1,81 @@
-import axios from 'axios'
+// frontend/src/api/base/client.ts
+import { Effect } from 'effect'
 
-// Create axios instance with base configuration
-const apiClient = axios.create({
-  baseURL: 'http://localhost:5000/api',
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
+// Custom error type for better error handling
+export class ApiError extends Error {
+  constructor(message: string, public status?: number) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
 
-// Request interceptor (for auth tokens, logging, etc.)
-apiClient.interceptors.request.use(
-  (config) => {
-    // Add auth token here if needed
-    // config.headers.Authorization = `Bearer ${token}`
-    console.log(`🚀 ${config.method?.toUpperCase()} ${config.url}`)
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  },
-)
+// Base configuration
+const BASE_URL = 'http://localhost:5000/api'
+const DEFAULT_HEADERS = { 'Content-Type': 'application/json' }
 
-// Response interceptor (for error handling, logging, etc.)
-apiClient.interceptors.response.use(
-  (response) => {
-    console.log(
-      `✅ ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`,
-    )
-    return response
-  },
-  (error) => {
-    console.error(
-      `❌ ${error.config?.method?.toUpperCase()} ${error.config?.url} - ${error.response?.status}`,
-    )
+// Effect-based HTTP client using native fetch (no Axios)
+export const httpClient = {
+  get: <T>(url: string): Effect.Effect<T, ApiError> =>
+    Effect.tryPromise(async () => {
+      console.log(`GET ${BASE_URL}${url}`)
+      const response = await fetch(`${BASE_URL}${url}`, {
+        method: 'GET',
+        headers: DEFAULT_HEADERS,
+      })
+      if (!response.ok) {
+        console.error(`❌ GET ${BASE_URL}${url} - ${response.status}`)
+        throw new ApiError(`GET failed: ${response.statusText}`, response.status)
+      }
+      console.log(`✅ GET ${BASE_URL}${url} - ${response.status}`)
+      return response.json()
+    }),
 
-    // Handle common errors globally
-    if (error.response?.status === 401) {
-      // Handle unauthorized - redirect to login, etc.
-      console.log('Unauthorized access')
-    }
+  post: <T>(url: string, data: any): Effect.Effect<T, ApiError> =>
+    Effect.tryPromise(async () => {
+      console.log(`POST ${BASE_URL}${url}`)
+      const response = await fetch(`${BASE_URL}${url}`, {
+        method: 'POST',
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify(data),
+      })
+      if (!response.ok) {
+        console.error(`❌ POST ${BASE_URL}${url} - ${response.status}`)
+        throw new ApiError(`POST failed: ${response.statusText}`, response.status)
+      }
+      console.log(`✅ POST ${BASE_URL}${url} - ${response.status}`)
+      return response.json()
+    }),
 
-    return Promise.reject(error)
-  },
-)
+  put: (url: string, data: any): Effect.Effect<void, ApiError> =>
+    Effect.tryPromise(async () => {
+      console.log(`PUT ${BASE_URL}${url}`)
+      const response = await fetch(`${BASE_URL}${url}`, {
+        method: 'PUT',
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify(data),
+      })
+      if (!response.ok) {
+        console.error(`❌ PUT ${BASE_URL}${url} - ${response.status}`)
+        throw new ApiError(`PUT failed: ${response.statusText}`, response.status)
+      }
+      console.log(`✅ PUT ${BASE_URL}${url} - ${response.status}`)
+    }),
 
-export default apiClient
+  delete: (url: string): Effect.Effect<void, ApiError> =>
+    Effect.tryPromise(async () => {
+      console.log(`DELETE ${BASE_URL}${url}`)
+      const response = await fetch(`${BASE_URL}${url}`, {
+        method: 'DELETE',
+        headers: DEFAULT_HEADERS,
+      })
+      if (!response.ok) {
+        console.error(`❌ DELETE ${BASE_URL}${url} - ${response.status}`)
+        throw new ApiError(`DELETE failed: ${response.statusText}`, response.status)
+      }
+      console.log(`✅ DELETE ${BASE_URL}${url} - ${response.status}`)
+    }),
+}
+
+// Helper to run Effect requests
+export const runRequest = <A, E>(effect: Effect.Effect<A, E>) =>
+  Effect.runPromise(effect)

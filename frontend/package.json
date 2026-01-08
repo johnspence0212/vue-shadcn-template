@@ -18,11 +18,13 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@effect/platform": "^0.94.1",
+    "@effect/schema": "^0.75.5",
     "@tailwindcss/vite": "^4.1.16",
     "@vueuse/core": "^14.0.0",
-    "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "effect": "^3.19.14",
     "lucide-vue-next": "^0.548.0",
     "pinia": "^3.0.3",
     "reka-ui": "^2.6.0",

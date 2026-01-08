@@ -30,10 +30,11 @@ Vue 3 + TypeScript application with Vite, Vue Router, Pinia, and shadcn-vue comp
 ```
 frontend/
 ├── src/
-│   ├── api/              # API client & type definitions
+│   ├── api/              # API client, schemas & type definitions
 │   │   ├── base/
-│   │   │   ├── client.ts       # Axios instance
-│   │   │   └── base.ts         # Base API class
+│   │   │   ├── client.ts       # Effect-based HTTP client (no Axios)
+│   │   │   └── base.ts         # Base API class with Effect & Schema
+│   │   ├── schemas.ts          # Runtime validation schemas
 │   │   └── types/
 │   │       └── base.ts         # TypeScript interfaces
 │   ├── assets/           # CSS and static assets
@@ -69,12 +70,8 @@ frontend/
 Edit `src/api/base/client.ts` to configure your API endpoint:
 
 ```typescript
-const apiClient = axios.create({
-  baseURL: 'http://localhost:5000/api', // Change this to your API URL
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
+// In httpClient object
+const BASE_URL = 'http://localhost:5000/api' // Change this to your API URL
 ```
 
 ### Development Server Port
@@ -91,66 +88,77 @@ export default defineConfig({
 
 ## 🌐 Adding API Integration
 
-### Step 1: Define TypeScript Interface
+### Step 1: Define Schema (Runtime Validation)
 
-Create your interface in `src/api/types/`:
+Create schemas in `src/api/schemas.ts` for runtime validation:
 
 ```typescript
-// src/api/types/task.ts
-import { BaseEntity } from './base'
+// src/api/schemas.ts
+import { Schema } from '@effect/schema'
 
-export interface Task extends BaseEntity {
-  title: string
-  description?: string
-  isCompleted: boolean
-  dueDate?: string
-}
+// Base entity schema
+export const BaseEntitySchema = Schema.Struct({
+  id: Schema.Number,
+  createdAt: Schema.DateFromString, // Parses ISO string to Date
+  updatedAt: Schema.DateFromString,
+})
+
+// Task schema
+export const TaskSchema = Schema.Struct({
+  ...BaseEntitySchema.fields, // Reuse base fields
+  title: Schema.NonEmptyString,
+  description: Schema.optional(Schema.String),
+  isCompleted: Schema.Boolean,
+  dueDate: Schema.optional(Schema.DateFromString),
+})
+
+// Derive TypeScript types from schemas (optional)
+export type BaseEntity = Schema.Schema.Type<typeof BaseEntitySchema>
+export type Task = Schema.Schema.Type<typeof TaskSchema>
 ```
 
 ### Step 2: Create API Client
 
-Create an API client in `src/api/`:
+Create an API client in `src/api/` using the Effect-based `BaseApiService`:
 
 ```typescript
 // src/api/taskApi.ts
-import { BaseApi } from './base/base'
-import { Task } from './types/task'
+import { BaseApiService } from './base/base'
+import { TaskSchema } from './schemas'
 
-class TaskApi extends BaseApi<Task> {
-  constructor() {
-    super('task') // Matches your backend controller route
-  }
-
-  // Add custom methods if needed
-  async getCompleted(): Promise<Task[]> {
-    const response = await this.client.get<Task[]>(`${this.endpoint}/completed`)
-    return response.data
-  }
-}
-
-export const taskApi = new TaskApi()
+export const taskApi = new BaseApiService('tasks', TaskSchema)
 ```
 
 ### Step 3: Use in Components
 
 ```vue
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { Effect } from 'effect'
 import { taskApi } from '@/api/taskApi'
-import type { Task } from '@/api/types/task'
+import type { Task } from '@/api/schemas' // Or from interfaces if preferred
 
 const tasks = ref<Task[]>([])
+const error = ref<string>('')
 
 const loadTasks = async () => {
-  tasks.value = await taskApi.getAll()
+  const result = await Effect.runPromise(taskApi.getAll())
+  if (Effect.isSuccess(result)) {
+    tasks.value = result.success
+  } else {
+    error.value = result.failure.message // Handles ApiError or ParseError
+  }
 }
 
 const createTask = async (title: string) => {
-  const newTask = await taskApi.create({
-    title,
-    isCompleted: false,
-  })
-  tasks.value.push(newTask)
+  const result = await Effect.runPromise(
+    taskApi.create({
+      title,
+      isCompleted: false,
+    })
+  )
+  if (Effect.isSuccess(result)) {
+    tasks.value.push(result.success)
+  }
 }
 
 onMounted(() => {
@@ -238,26 +246,32 @@ Create your view in `src/views/`:
 <!-- src/views/TasksView.vue -->
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { Effect } from 'effect'
 import { taskApi } from '@/api/taskApi'
-import type { Task } from '@/api/types/task'
+import type { Task } from '@/api/schemas'
 import TaskCard from '@/components/common/TaskCard.vue'
 
 const tasks = ref<Task[]>([])
 const loading = ref(true)
+const error = ref<string>('')
 
 const loadTasks = async () => {
-  try {
-    tasks.value = await taskApi.getAll()
-  } catch (error) {
-    console.error('Failed to load tasks:', error)
-  } finally {
-    loading.value = false
+  loading.value = true
+  error.value = ''
+  const result = await Effect.runPromise(taskApi.getAll())
+  if (Effect.isSuccess(result)) {
+    tasks.value = result.success
+  } else {
+    error.value = result.failure.message
   }
+  loading.value = false
 }
 
 const deleteTask = async (id: number) => {
-  await taskApi.delete(id)
-  tasks.value = tasks.value.filter((t) => t.id !== id)
+  const result = await Effect.runPromise(taskApi.delete(id))
+  if (Effect.isSuccess(result)) {
+    tasks.value = tasks.value.filter((t) => t.id !== id)
+  }
 }
 
 onMounted(() => {
@@ -270,7 +284,7 @@ onMounted(() => {
     <h1 class="text-2xl font-bold mb-4">My Tasks</h1>
 
     <div v-if="loading">Loading...</div>
-
+    <div v-else-if="error" class="text-red-500">{{ error }}</div>
     <div v-else class="grid gap-4">
       <TaskCard v-for="task in tasks" :key="task.id" :task="task" @delete="deleteTask" />
     </div>
@@ -390,35 +404,45 @@ Create stores in `src/stores/`:
 // src/stores/taskStore.ts
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { Effect } from 'effect'
 import { taskApi } from '@/api/taskApi'
-import type { Task } from '@/api/types/task'
+import type { Task } from '@/api/schemas'
 
 export const useTaskStore = defineStore('tasks', () => {
   const tasks = ref<Task[]>([])
   const loading = ref(false)
+  const error = ref<string>('')
 
   const fetchTasks = async () => {
     loading.value = true
-    try {
-      tasks.value = await taskApi.getAll()
-    } finally {
-      loading.value = false
+    error.value = ''
+    const result = await Effect.runPromise(taskApi.getAll())
+    if (Effect.isSuccess(result)) {
+      tasks.value = result.success
+    } else {
+      error.value = result.failure.message
     }
+    loading.value = false
   }
 
   const addTask = async (task: Partial<Task>) => {
-    const newTask = await taskApi.create(task)
-    tasks.value.push(newTask)
+    const result = await Effect.runPromise(taskApi.create(task))
+    if (Effect.isSuccess(result)) {
+      tasks.value.push(result.success)
+    }
   }
 
   const removeTask = async (id: number) => {
-    await taskApi.delete(id)
-    tasks.value = tasks.value.filter((t) => t.id !== id)
+    const result = await Effect.runPromise(taskApi.delete(id))
+    if (Effect.isSuccess(result)) {
+      tasks.value = tasks.value.filter((t) => t.id !== id)
+    }
   }
 
   return {
     tasks,
     loading,
+    error,
     fetchTasks,
     addTask,
     removeTask,
@@ -442,6 +466,7 @@ onMounted(() => {
 
 <template>
   <div v-if="taskStore.loading">Loading...</div>
+  <div v-else-if="taskStore.error">{{ taskStore.error }}</div>
   <div v-else>
     <div v-for="task in taskStore.tasks" :key="task.id">
       {{ task.title }}
@@ -457,7 +482,8 @@ onMounted(() => {
 - **Vite** - Fast build tool
 - **Vue Router** - Client-side routing
 - **Pinia** - State management
-- **Axios** - HTTP client
+- **Effect** - Functional programming & error handling
+- **@effect/schema** - Runtime data validation
 - **shadcn-vue** - UI components
 - **Tailwind CSS** - Utility-first CSS
 - **Vitest** - Unit testing
@@ -499,7 +525,7 @@ Use utility classes directly in templates:
 Edit `src/api/base/client.ts`:
 
 ```typescript
-baseURL: 'http://localhost:5000/api'
+const BASE_URL = 'http://localhost:5000/api'
 ```
 
 ### Add New UI Component
@@ -545,16 +571,19 @@ npm run preview
 
 ## 🎯 Best Practices
 
-1. **Type Everything** - Use TypeScript interfaces for all data
+1. **Type Everything** - Use TypeScript interfaces and Effect schemas for data
 2. **Composition API** - Use `<script setup>` for cleaner code
 3. **Component Organization** - Keep components small and focused
 4. **Lazy Loading** - Use dynamic imports for large routes
-5. **Error Handling** - Always wrap API calls in try/catch
-6. **Naming Conventions:**
+5. **Error Handling** - Use Effect for robust error handling and retries
+6. **Runtime Validation** - Define schemas for API responses to catch data mismatches
+7. **Functional Programming** - Leverage Effect for composable, testable code
+8. **Naming Conventions:**
    - Components: `PascalCase` (e.g., `TaskCard.vue`)
    - Views: `PascalCase` + `View` (e.g., `TasksView.vue`)
    - Stores: `camelCase` + `Store` (e.g., `taskStore.ts`)
    - API clients: `camelCase` + `Api` (e.g., `taskApi.ts`)
+   - Schemas: `PascalCase` + `Schema` (e.g., `TaskSchema.ts`)
 
 ---
 

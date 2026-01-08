@@ -1,39 +1,47 @@
-import type { BaseEntity } from '../types/base'
-import apiClient from './client'
+// frontend/src/api/base/base.ts
+import { Effect, Schema } from 'effect'
+import { httpClient, ApiError } from './client'
+import { ParseError } from '@effect/schema/ParseResult'
 
-export class BaseApiService<T extends BaseEntity> {
+export class BaseApiService<T> {
   protected endpoint: string
-  protected apiClient = apiClient
+  protected schema: Schema.Schema<T>
+  protected arraySchema: Schema.Schema<readonly T[]>
 
-  constructor(endpoint: string) {
+  constructor(endpoint: string, schema: Schema.Schema<T>) {
     this.endpoint = endpoint
+    this.schema = schema
+    this.arraySchema = Schema.Array(schema)
   }
 
   // GET /api/{endpoint} - Get all entities
-  async getAll(): Promise<T[]> {
-    const response = await apiClient.get<T[]>(`/${this.endpoint}`)
-    return response.data
+  getAll(): Effect.Effect<readonly T[], ApiError | ParseError> {
+    return httpClient.get<unknown>(`/${this.endpoint}`).pipe(
+      Effect.andThen(Schema.decodeUnknown(this.arraySchema))
+    )
   }
 
   // GET /api/{endpoint}/{id} - Get entity by ID
-  async getById(id: number): Promise<T> {
-    const response = await apiClient.get<T>(`/${this.endpoint}/${id}`)
-    return response.data
+  getById(id: number): Effect.Effect<T, ApiError | ParseError> {
+    return httpClient.get<T>(`/${this.endpoint}/${id}`).pipe(
+      Effect.andThen(Schema.decodeUnknown(this.schema))
+    )
   }
 
   // POST /api/{endpoint} - Create new entity
-  async create(entity: Omit<T, 'id' | 'createdAt'>): Promise<T> {
-    const response = await apiClient.post<T>(`/${this.endpoint}`, entity)
-    return response.data
+  create(entity: Omit<T, 'id' | 'createdAt'>): Effect.Effect<T, ApiError | ParseError> {
+    return httpClient.post<T>(`/${this.endpoint}`, entity).pipe(
+      Effect.andThen(Schema.decodeUnknown(this.schema))
+    )
   }
 
   // PUT /api/{endpoint}/{id} - Update entity
-  async update(id: number, entity: T): Promise<void> {
-    await apiClient.put(`/${this.endpoint}/${id}`, entity)
+  update(id: number, entity: T): Effect.Effect<void, ApiError> {
+    return httpClient.put(`/${this.endpoint}/${id}`, entity)
   }
 
   // DELETE /api/{endpoint}/{id} - Delete entity
-  async delete(id: number): Promise<void> {
-    await apiClient.delete(`/${this.endpoint}/${id}`)
+  delete(id: number): Effect.Effect<void, ApiError> {
+    return httpClient.delete(`/${this.endpoint}/${id}`)
   }
 }
