@@ -30,7 +30,7 @@ export const httpClient = {
       return response.json()
     }),
 
-  post: <T>(url: string, data: any): Effect.Effect<T, ApiError> =>
+  post: <T, B = unknown>(url: string, data: B): Effect.Effect<T, ApiError> =>
     Effect.tryPromise(async () => {
       console.log(`POST ${BASE_URL}${url}`)
       const response = await fetch(`${BASE_URL}${url}`, {
@@ -46,7 +46,7 @@ export const httpClient = {
       return response.json()
     }),
 
-  put: (url: string, data: any): Effect.Effect<void, ApiError> =>
+  put: <B = unknown>(url: string, data: B): Effect.Effect<void, ApiError> =>
     Effect.tryPromise(async () => {
       console.log(`PUT ${BASE_URL}${url}`)
       const response = await fetch(`${BASE_URL}${url}`, {
