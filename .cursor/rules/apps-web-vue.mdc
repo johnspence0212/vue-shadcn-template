@@ -1,0 +1,53 @@
+---
+description: Vue 3 Composition API, shadcn-vue, and Tailwind conventions for apps/web
+globs: apps/web/**/*.{vue,ts}
+alwaysApply: false
+---
+
+# Vue Frontend (`apps/web`)
+
+## Components
+
+```vue
+<!-- ✅ GOOD — script setup + typed props -->
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import type { Task } from '@/api/types/schema'
+
+interface Props {
+  task: Task
+}
+const props = defineProps<Props>()
+</script>
+```
+
+- Use `<script setup lang="ts">` for all new components
+- UI primitives: `@/components/ui/*` (shadcn-vue)
+- Views: `*View.vue` in `src/views/`
+- Absolute imports via `@/`
+
+## Imports
+
+```typescript
+// ✅ GOOD — external first, then @/
+import { computed } from 'vue'
+import { Button } from '@/components/ui/button'
+import { taskApi } from '@/api/taskApi'
+```
+
+## Styling
+
+Tailwind utility classes; group layout/spacing/typography logically. Prefer `cn()` from `@/lib/utils` for conditional classes.
+
+## API calls in views
+
+Decode with Effect schemas; run promises via `runRequest` or store wrappers — do not call `fetch` directly in views.
+
+```typescript
+// ❌ BAD
+const res = await fetch('/api/task')
+
+// ✅ GOOD
+import { runRequest } from '@/api/base/client'
+const tasks = await runRequest(taskApi.getAll())
+```

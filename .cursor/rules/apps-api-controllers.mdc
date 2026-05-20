@@ -1,0 +1,50 @@
+---
+description: BaseController CRUD, route conventions, authorization on controllers
+globs: apps/api/Controllers/**
+alwaysApply: false
+---
+
+# API Controllers
+
+## BaseController pattern
+
+```csharp
+// ✅ GOOD — thin entity controller
+public class TaskController(AppDbContext context) : BaseController<TaskItem>(context)
+{
+    // Custom endpoints only; CRUD inherited
+}
+```
+
+`BaseController<T>` provides `GET`, `GET/{id}`, `POST`, `PUT/{id}`, `DELETE/{id}` with `[Authorize]`.
+
+## Custom endpoints
+
+```csharp
+[HttpGet("completed")]
+public async Task<ActionResult<IEnumerable<TaskItem>>> GetCompleted()
+{
+    return await _dbSet.Where(t => t.IsCompleted).ToListAsync();
+}
+```
+
+## Routes
+
+`[Route("api/[controller]")]` → `/api/task` (controller name minus `Controller` suffix).
+
+## Validation
+
+Override `Post`/`Put` for domain rules; return `BadRequest()` with clear messages.
+
+```csharp
+// ❌ BAD — new controller without [Authorize] on class
+[ApiController]
+public class TaskController : ControllerBase { ... }
+
+// ✅ GOOD — inherit BaseController (includes [Authorize])
+public class TaskController(AppDbContext context) : BaseController<TaskItem>(context);
+```
+
+## Auth controller
+
+`AuthController` is separate — does not inherit `BaseController`; uses `[AllowAnonymous]` on login/register.

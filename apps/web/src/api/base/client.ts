@@ -1,81 +1,103 @@
-// frontend/src/api/base/client.ts
 import { Effect } from 'effect'
+import { authToken } from '@/lib/authToken'
+import { resolveApiBaseUrl } from '@/lib/apiBaseUrl'
 
-// Custom error type for better error handling
 export class ApiError extends Error {
-  constructor(message: string, public status?: number) {
+  constructor(
+    message: string,
+    public status?: number
+  ) {
     super(message)
     this.name = 'ApiError'
   }
 }
 
-// Base configuration
-const BASE_URL = 'http://localhost:5000/api'
-const DEFAULT_HEADERS = { 'Content-Type': 'application/json' }
+const BASE_URL = resolveApiBaseUrl()
 
-// Effect-based HTTP client using native fetch (no Axios)
+function authHeaders(): HeadersInit {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const token = authToken.get()
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+  return headers
+}
+
+async function readErrorMessage(response: Response): Promise<string> {
+  const text = await response.text()
+  if (!text) {
+    return response.statusText
+  }
+
+  try {
+    const json = JSON.parse(text) as {
+      title?: string
+      detail?: string
+      message?: string
+    }
+    return json.detail ?? json.title ?? json.message ?? text
+  } catch {
+    return text
+  }
+}
+
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const message = await readErrorMessage(response)
+    throw new ApiError(message, response.status)
+  }
+  if (response.status === 204) {
+    return undefined as T
+  }
+  return response.json() as Promise<T>
+}
+
 export const httpClient = {
   get: <T>(url: string): Effect.Effect<T, ApiError> =>
-    Effect.tryPromise(async () => {
-      console.log(`GET ${BASE_URL}${url}`)
-      const response = await fetch(`${BASE_URL}${url}`, {
-        method: 'GET',
-        headers: DEFAULT_HEADERS,
-      })
-      if (!response.ok) {
-        console.error(`❌ GET ${BASE_URL}${url} - ${response.status}`)
-        throw new ApiError(`GET failed: ${response.statusText}`, response.status)
-      }
-      console.log(`✅ GET ${BASE_URL}${url} - ${response.status}`)
-      return response.json()
+    Effect.tryPromise({
+      try: () =>
+        fetch(`${BASE_URL}${url}`, {
+          method: 'GET',
+          headers: authHeaders()
+        }).then(handleResponse<T>),
+      catch: (error) =>
+        error instanceof ApiError ? error : new ApiError(String(error))
     }),
 
   post: <T, B = unknown>(url: string, data: B): Effect.Effect<T, ApiError> =>
-    Effect.tryPromise(async () => {
-      console.log(`POST ${BASE_URL}${url}`)
-      const response = await fetch(`${BASE_URL}${url}`, {
-        method: 'POST',
-        headers: DEFAULT_HEADERS,
-        body: JSON.stringify(data),
-      })
-      if (!response.ok) {
-        console.error(`❌ POST ${BASE_URL}${url} - ${response.status}`)
-        throw new ApiError(`POST failed: ${response.statusText}`, response.status)
-      }
-      console.log(`✅ POST ${BASE_URL}${url} - ${response.status}`)
-      return response.json()
+    Effect.tryPromise({
+      try: () =>
+        fetch(`${BASE_URL}${url}`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify(data)
+        }).then(handleResponse<T>),
+      catch: (error) =>
+        error instanceof ApiError ? error : new ApiError(String(error))
     }),
 
   put: <B = unknown>(url: string, data: B): Effect.Effect<void, ApiError> =>
-    Effect.tryPromise(async () => {
-      console.log(`PUT ${BASE_URL}${url}`)
-      const response = await fetch(`${BASE_URL}${url}`, {
-        method: 'PUT',
-        headers: DEFAULT_HEADERS,
-        body: JSON.stringify(data),
-      })
-      if (!response.ok) {
-        console.error(`❌ PUT ${BASE_URL}${url} - ${response.status}`)
-        throw new ApiError(`PUT failed: ${response.statusText}`, response.status)
-      }
-      console.log(`✅ PUT ${BASE_URL}${url} - ${response.status}`)
+    Effect.tryPromise({
+      try: () =>
+        fetch(`${BASE_URL}${url}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify(data)
+        }).then(handleResponse<void>),
+      catch: (error) =>
+        error instanceof ApiError ? error : new ApiError(String(error))
     }),
 
   delete: (url: string): Effect.Effect<void, ApiError> =>
-    Effect.tryPromise(async () => {
-      console.log(`DELETE ${BASE_URL}${url}`)
-      const response = await fetch(`${BASE_URL}${url}`, {
-        method: 'DELETE',
-        headers: DEFAULT_HEADERS,
-      })
-      if (!response.ok) {
-        console.error(`❌ DELETE ${BASE_URL}${url} - ${response.status}`)
-        throw new ApiError(`DELETE failed: ${response.statusText}`, response.status)
-      }
-      console.log(`✅ DELETE ${BASE_URL}${url} - ${response.status}`)
-    }),
+    Effect.tryPromise({
+      try: () =>
+        fetch(`${BASE_URL}${url}`, {
+          method: 'DELETE',
+          headers: authHeaders()
+        }).then(handleResponse<void>),
+      catch: (error) =>
+        error instanceof ApiError ? error : new ApiError(String(error))
+    })
 }
 
-// Helper to run Effect requests
-export const runRequest = <A, E>(effect: Effect.Effect<A, E>) =>
-  Effect.runPromise(effect)
+export const runRequest = <A, E>(effect: Effect.Effect<A, E>) => Effect.runPromise(effect)

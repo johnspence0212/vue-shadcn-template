@@ -1,0 +1,50 @@
+---
+description: Effect Schema API clients — fetch, decode, BaseApiService pattern
+globs: apps/web/src/api/**
+alwaysApply: false
+---
+
+# Effect API Layer (`apps/web/src/api`)
+
+## Client
+
+`base/client.ts` — `fetch` + Bearer token from `authToken`, returns `Effect.Effect<T, ApiError>`.
+
+```typescript
+// ✅ GOOD — typed Effect pipeline
+httpClient.get<unknown>('/task').pipe(
+  Effect.flatMap(Schema.decodeUnknown(TaskSchema))
+)
+```
+
+## BaseApiService
+
+Extend for new entities:
+
+```typescript
+// ✅ GOOD — apps/web/src/api/taskApi.ts pattern
+class TaskApi extends BaseApiService<Task> {
+  constructor() {
+    super('task', TaskSchema as Schema.Schema<Task, unknown>)
+  }
+}
+export const taskApi = new TaskApi()
+```
+
+## Schemas
+
+Define in `types/schema.ts` with `effect` `Schema.Struct`. Match API camelCase JSON.
+
+```typescript
+// ❌ BAD — separate @effect/schema package
+import { Schema } from '@effect/schema'
+
+// ✅ GOOD
+import { Schema } from 'effect'
+```
+
+## Auth API
+
+`authApi.ts` uses `runRequest` for Promise-based stores; entity APIs can stay Effect-native in components/stores.
+
+Endpoint paths: `/auth/login`, `/auth/register`, `/auth/me` (no leading duplication — `BASE_URL` already ends with `/api`).

@@ -1,54 +1,43 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Api.Data;
 using Api.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
 [ApiController]
-public abstract class BaseController<T> : ControllerBase where T : BaseEntity
+[Route("api/[controller]")]
+[Authorize]
+public abstract class BaseController<T>(AppDbContext context) : ControllerBase where T : BaseEntity
 {
-    protected readonly AppDbContext _context;
-    protected readonly DbSet<T> _dbSet;
+    protected readonly DbSet<T> _dbSet = context.Set<T>();
 
-    protected BaseController(AppDbContext context)
-    {
-        _context = context;
-        _dbSet = context.Set<T>();
-    }
-
-    // GET: api/[controller]
     [HttpGet]
     public virtual async Task<ActionResult<IEnumerable<T>>> GetAll()
     {
         return await _dbSet.ToListAsync();
     }
 
-    // GET: api/[controller]/5
     [HttpGet("{id}")]
     public virtual async Task<ActionResult<T>> Get(int id)
     {
         var entity = await _dbSet.FindAsync(id);
-
-        if (entity == null)
+        if (entity is null)
         {
             return NotFound();
         }
-
         return entity;
     }
 
-    // POST: api/[controller]
     [HttpPost]
     public virtual async Task<ActionResult<T>> Post(T entity)
     {
         _dbSet.Add(entity);
-        await _context.SaveChangesAsync();
-
+        await context.SaveChangesAsync();
         return CreatedAtAction(nameof(Get), new { id = entity.Id }, entity);
     }
 
-    // PUT: api/[controller]/5
     [HttpPut("{id}")]
     public virtual async Task<IActionResult> Put(int id, T entity)
     {
@@ -57,15 +46,15 @@ public abstract class BaseController<T> : ControllerBase where T : BaseEntity
             return BadRequest();
         }
 
-        _context.Entry(entity).State = EntityState.Modified;
+        context.Entry(entity).State = EntityState.Modified;
 
         try
         {
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!EntityExists(id))
+            if (!await EntityExists(id))
             {
                 return NotFound();
             }
@@ -75,24 +64,22 @@ public abstract class BaseController<T> : ControllerBase where T : BaseEntity
         return NoContent();
     }
 
-    // DELETE: api/[controller]/5
     [HttpDelete("{id}")]
     public virtual async Task<IActionResult> Delete(int id)
     {
         var entity = await _dbSet.FindAsync(id);
-        if (entity == null)
+        if (entity is null)
         {
             return NotFound();
         }
 
         _dbSet.Remove(entity);
-        await _context.SaveChangesAsync();
-
+        await context.SaveChangesAsync();
         return NoContent();
     }
 
-    protected virtual bool EntityExists(int id)
+    protected virtual async Task<bool> EntityExists(int id)
     {
-        return _dbSet.Any(e => e.Id == id);
+        return await _dbSet.AnyAsync(e => e.Id == id);
     }
 }

@@ -21,7 +21,6 @@ coverage
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
 *.sw?
 
 *.tsbuildinfo
@@ -68,3 +67,10 @@ TestResults/
 *.db
 *.db-shm
 *.db-wal
+apps/api/*.db
+apps/api/*.db-*
+apps/web/.env
+.aspire/
+test-results/
+playwright-report/
+blob-report/

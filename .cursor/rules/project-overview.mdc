@@ -1,0 +1,52 @@
+---
+description: Monorepo layout, Aspire-first dev, auth, and navigation to docs/skills
+alwaysApply: true
+---
+
+# Project Overview
+
+Vue 3 + .NET 9 monorepo. **Aspire AppHost is the default dev entry point.**
+
+## Layout
+
+```
+vue-shadcn-template/
+├── apps/web/          # Vue 3 + Vite + shadcn-vue + Effect API client
+├── apps/api/          # .NET 9 Web API (JWT auth, EF Core, OpenAPI/Scalar)
+├── apps/api.tests/    # xUnit integration tests
+├── aspire/
+│   ├── AppHost/       # DistributedApplication orchestration
+│   └── ServiceDefaults/
+├── e2e/               # Playwright (starts api + web)
+└── Template.sln
+```
+
+## Stack
+
+| Layer | Tech |
+|-------|------|
+| Frontend | Vue 3, Pinia, Vue Router, Tailwind 4, shadcn-vue, **Effect** + `fetch` |
+| Backend | .NET 9, EF Core migrations, JWT, Scalar (dev) |
+| Orchestration | .NET Aspire AppHost |
+| Tests | Vitest (web), xUnit (api), Playwright (e2e) |
+
+## Auth
+
+All CRUD routes inherit `[Authorize]` from `BaseController<T>`. Auth endpoints live at `api/auth/*`. Frontend guards routes with `meta.requiresAuth` / `meta.guest`.
+
+## Dev workflow
+
+```bash
+# Preferred
+dotnet run --project aspire/AppHost
+
+# Or standalone
+dotnet run --project apps/api
+cd apps/web && npm run dev
+```
+
+## References
+
+- File map: [.cursor/docs/FILE-INDEX.md](../docs/FILE-INDEX.md)
+- Skills: `.cursor/skills/` (`run-dev-environment`, `add-fullstack-entity`, `add-ef-migration`, …)
+- Legacy `AGENTS.md` / `frontend/` / `backend/Api/` paths are **obsolete** — use `apps/*` only.

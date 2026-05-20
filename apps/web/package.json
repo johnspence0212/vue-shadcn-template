@@ -19,7 +19,6 @@
   },
   "dependencies": {
     "@effect/platform": "^0.94.1",
-    "@effect/schema": "^0.75.5",
     "@tailwindcss/vite": "^4.1.16",
     "@vueuse/core": "^14.0.0",
     "class-variance-authority": "^0.7.1",

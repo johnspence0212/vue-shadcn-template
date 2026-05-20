@@ -1,0 +1,39 @@
+---
+description: Vitest, xUnit integration tests, Playwright e2e conventions
+globs: "**/*.{spec.ts,cs},e2e/**,apps/api.tests/**"
+alwaysApply: false
+---
+
+# Testing
+
+## Web unit tests (Vitest)
+
+- Location: `apps/web/src/**/__tests__/*.spec.ts` or colocated `*.spec.ts`
+- Run: `cd apps/web && npm run test:unit -- --run`
+- Mock `@/api/*` and Pinia stores; use `@vue/test-utils`
+
+```typescript
+vi.mock('@/api/taskApi')
+const wrapper = mount(TaskCard, { props: { task } })
+```
+
+## API integration tests
+
+- Project: `apps/api.tests/`
+- `CustomWebApplicationFactory` — in-memory/test DB
+- `AuthIntegrationTests` — login, register, protected routes
+
+```bash
+dotnet test apps/api.tests/Api.Tests.csproj
+```
+
+## E2E (Playwright)
+
+- Package: `e2e/`
+- `playwright.config.ts` starts api (`dotnet run --project apps/api`) + web (`npm run dev`)
+- Tests: `e2e/tests/*.spec.ts`
+- Run: `cd e2e && npm test`
+
+## CI alignment
+
+Match `.github/workflows/ci.yml` jobs: api → web → e2e (e2e needs both).

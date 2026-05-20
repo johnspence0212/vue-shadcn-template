@@ -1,0 +1,46 @@
+---
+description: .NET 9 API conventions — extensions, options, minimal Program.cs
+globs: apps/api/**/*.cs
+alwaysApply: false
+---
+
+# .NET API (`apps/api`)
+
+## Entry point
+
+`Program.cs` is thin:
+
+```csharp
+builder.AddServiceDefaults();
+builder.Services.AddApiServices(builder.Configuration);
+await app.MigrateAndSeedAsync();
+app.UseApiPipeline();
+app.MapDefaultEndpoints();
+```
+
+## Structure
+
+| Folder | Purpose |
+|--------|---------|
+| `Controllers/` | HTTP endpoints |
+| `Models/` | EF entities |
+| `Data/` | DbContext, configurations, migrations |
+| `Contracts/` | DTOs (e.g. `Contracts/Auth/`) |
+| `Options/` | `JwtOptions`, `AuthOptions` |
+| `Services/` | `IJwtTokenService` |
+| `Extensions/` | DI and pipeline |
+
+## JSON
+
+Camel case via `AddJsonOptions`. Entities returned directly from controllers for template CRUD.
+
+## Dev docs
+
+`UseApiPipeline` maps OpenAPI + Scalar at `/scalar/v1` in Development only.
+
+## Health
+
+- `/health` — Aspire defaults (dev)
+- `/health/ready` — DB check
+
+Do not add Swashbuckle-only setup; use built-in OpenAPI + Scalar.

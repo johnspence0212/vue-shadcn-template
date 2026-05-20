@@ -1,0 +1,39 @@
+---
+description: CI workflow — dotnet restore/build/test, npm type-check/lint/unit/build, Playwright
+globs: .github/**
+alwaysApply: false
+---
+
+# GitHub Actions
+
+## Workflow (`.github/workflows/ci.yml`)
+
+| Job | Steps |
+|-----|-------|
+| `api` | `dotnet restore/build/test` on `Template.sln` / `apps/api.tests` |
+| `web` | `npm ci`, `type-check`, `lint`, `test:unit --run`, `build` in `apps/web` |
+| `e2e` | needs api+web; Playwright in `e2e/` with `CI=true` |
+
+## Versions
+
+- .NET: `9.0.x`
+- Node: `22` (cache `apps/web/package-lock.json`)
+
+## Local parity
+
+Use skill `run-ci-locally` to reproduce failures before pushing.
+
+```yaml
+# ✅ GOOD — working-directory for web job
+defaults:
+  run:
+    working-directory: apps/web
+```
+
+## Do not
+
+- Reference `frontend/` or `backend/Api/` paths
+- Skip `npm run type-check` or `lint` in web job
+- Run e2e before api/web jobs succeed
+
+Fix failures with skill `fix-ci-failure`.
