@@ -1,0 +1,49 @@
+---
+description: Forbidden legacy patterns and insecure defaults for this template
+alwaysApply: true
+---
+
+# Anti-Patterns (Never Use)
+
+## Obsolete paths & tooling
+
+| ❌ Never | ✅ Use instead |
+|----------|----------------|
+| `frontend/` | `apps/web/` |
+| `backend/Api/` | `apps/api/` |
+| `budget.db` | `app.db` / migrations |
+| Axios | `fetch` via `apps/web/src/api/base/client.ts` |
+| `@effect/schema` package | `effect` `Schema` module |
+| `EnsureCreated()` | `Database.MigrateAsync()` in `DbInitializer` |
+| `FrontendUrl` config key | `WebOrigin` / `WebOrigins` |
+| Swashbuckle-only (no OpenAPI map) | `MapOpenApi()` + Scalar in dev |
+| `.github/copilot-instructions.md` | `.cursor/rules/` + skills |
+| Open CRUD without auth | `[Authorize]` on `BaseController<T>` |
+
+## Examples
+
+```csharp
+// ❌ BAD
+await context.Database.EnsureCreatedAsync();
+
+// ✅ GOOD — DbInitializer.cs
+await context.Database.MigrateAsync();
+```
+
+```typescript
+// ❌ BAD
+import axios from 'axios'
+
+// ✅ GOOD
+import { httpClient } from '@/api/base/client'
+```
+
+```csharp
+// ❌ BAD — unauthenticated entity controller
+public class TaskController : BaseController<TaskItem> { } // missing [Authorize] on base
+
+// ✅ GOOD — BaseController already has [Authorize]
+public class TaskController(AppDbContext context) : BaseController<TaskItem>(context);
+```
+
+Do not add Copilot instruction files. Do not reintroduce deleted `backend/README.md` workflow.

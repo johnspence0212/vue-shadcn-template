@@ -1,0 +1,43 @@
+---
+description: .NET Aspire AppHost, ServiceDefaults, npm web app wiring
+globs: aspire/**
+alwaysApply: false
+---
+
+# Aspire Orchestration
+
+## AppHost (`aspire/AppHost/Program.cs`)
+
+```csharp
+var api = builder.AddProject<Projects.Api>("api")
+    .WithHttpHealthCheck("/health");
+
+var web = builder.AddNpmApp("web", "../../apps/web", "dev")
+    .WithReference(api)
+    .WithEnvironment("VITE_API_BASE_URL", api.GetEndpoint("http") + "/api")
+    .WithHttpEndpoint(env: "PORT")
+    .WithExternalHttpEndpoints();
+```
+
+## ServiceDefaults
+
+`aspire/ServiceDefaults/Extensions.cs` — OpenTelemetry, health checks (`/health`, `/alive`), service discovery, HTTP resilience.
+
+API calls `builder.AddServiceDefaults()` and `app.MapDefaultEndpoints()`.
+
+## Run
+
+```bash
+dotnet run --project aspire/AppHost
+```
+
+Dashboard shows api + web URLs. Web receives injected `VITE_API_BASE_URL`.
+
+## Adding resources
+
+Use skill `add-aspire-resource` for databases, caches, or additional projects.
+
+```csharp
+// ❌ BAD — hardcoding web URL in AppHost without WithReference
+// ✅ GOOD — WithReference(api) + GetEndpoint for service discovery
+```

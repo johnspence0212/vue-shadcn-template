@@ -1,0 +1,45 @@
+---
+description: JWT auth store, login/register views, router guards
+globs: apps/web/src/views/LoginView.vue,apps/web/src/views/RegisterView.vue,apps/web/src/stores/auth.ts,apps/web/src/router/index.ts,apps/web/src/api/authApi.ts,apps/web/src/lib/authToken.ts
+alwaysApply: false
+---
+
+# Frontend Auth
+
+## Token storage
+
+- `sessionStorage` key `template_auth_token`
+- `authToken.ts` syncs token for `httpClient` Authorization header
+- Store: `stores/auth.ts` — `login`, `register`, `fetchUser`, `hydrate`, `logout`
+
+## Router guards
+
+```typescript
+// ✅ GOOD — meta-driven (router/index.ts)
+meta: { requiresAuth: true }  // redirect to login
+meta: { guest: true }          // redirect authenticated users away
+```
+
+`beforeEach`: unauthenticated → `login?redirect=`; guest routes when logged in → `home`.
+
+## Views
+
+- `LoginView.vue` / `RegisterView.vue` call `useAuthStore()`
+- Show `auth.error`; disable submit while `auth.loading`
+
+## API contract
+
+```typescript
+// AuthResponse: { accessToken, expiresAt }
+await authApi.login({ email, password })
+await authApi.me() // requires Bearer token
+```
+
+## Hydration
+
+Call `auth.hydrate()` on app boot (`main.ts`) to restore session and load user.
+
+```typescript
+// ❌ BAD — storing JWT only in Pinia without sessionStorage sync
+// ✅ GOOD — setToken updates sessionStorage + authToken helper
+```

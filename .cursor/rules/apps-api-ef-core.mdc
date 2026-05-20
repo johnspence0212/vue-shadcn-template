@@ -1,0 +1,52 @@
+---
+description: EF Core DbContext, configurations, migrations, seeding
+globs: apps/api/Data/**
+alwaysApply: false
+---
+
+# EF Core (`apps/api/Data`)
+
+## DbContext
+
+`AppDbContext` — `DbSet<User>`, `DbSet<TaskItem>`; configurations applied from assembly.
+
+## Entity configuration
+
+```csharp
+// ✅ GOOD — inherit BaseEntityConfiguration<T>
+public class TaskItemConfiguration : BaseEntityConfiguration<TaskItem>
+{
+    public override void Configure(EntityTypeBuilder<TaskItem> builder)
+    {
+        base.Configure(builder);
+        builder.Property(t => t.Title).IsRequired().HasMaxLength(200);
+        builder.ToTable("Tasks");
+    }
+}
+```
+
+## Migrations
+
+- Folder: `apps/api/Migrations/`
+- Apply on startup: `DbInitializer.InitializeAsync` → `MigrateAsync()`
+- **Never** `EnsureCreated()`
+
+## Seeding
+
+`DbInitializer` seeds admin user when `Users` table is empty (`Seed:AdminEmail`, `Seed:AdminPassword`).
+
+## Interceptors
+
+`AuditableEntityInterceptor` sets `CreatedAt` / `UpdatedAt` on `BaseEntity`.
+
+## Provider switch
+
+`Database:Provider` — `Sqlite` | `SqlServer` | `PostgreSQL` (see skill `switch-database-provider`).
+
+```csharp
+// ❌ BAD
+Database.EnsureCreated();
+
+// ✅ GOOD
+await context.Database.MigrateAsync();
+```

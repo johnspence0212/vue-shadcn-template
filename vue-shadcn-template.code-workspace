@@ -1,15 +1,15 @@
 {
   "folders": [
-    {
-      "name": "Frontend",
-      "path": "./frontend"
-    },
-    {
-      "name": "Root",
-      "path": "."
-    }
+    { "path": ".", "name": "root" },
+    { "path": "apps/web", "name": "web" },
+    { "path": "apps/api", "name": "api" },
+    { "path": "aspire/AppHost", "name": "AppHost" }
   ],
   "settings": {
-    "typescript.tsdk": "frontend/node_modules/typescript/lib"
+    "files.exclude": {
+      "**/bin": true,
+      "**/obj": true,
+      "**/node_modules": true
+    }
   }
 }

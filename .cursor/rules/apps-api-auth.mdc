@@ -1,0 +1,44 @@
+---
+description: JWT authentication, AuthController, token service, User entity
+globs: apps/api/**/{Auth,Jwt,User}*,apps/api/Contracts/Auth/**,apps/api/Options/{Auth,Jwt}Options.cs,apps/api/Services/*Jwt*
+alwaysApply: false
+---
+
+# API Authentication
+
+## JWT
+
+- Config: `Jwt` section in `appsettings.json` (`Secret`, `Issuer`, `Audience`, `ExpirationMinutes`)
+- Service: `JwtTokenService` implements `IJwtTokenService`
+- Middleware: `AddJwtBearer` in `ServiceCollectionExtensions`
+
+## AuthController
+
+| Endpoint | Auth | Notes |
+|----------|------|-------|
+| `POST /api/auth/login` | Anonymous | Returns `AuthResponse` |
+| `POST /api/auth/register` | Anonymous | Gated by `Auth:AllowRegistration` |
+| `GET /api/auth/me` | `[Authorize]` | Returns `UserResponse` |
+
+```csharp
+// ✅ GOOD — anonymous login
+[AllowAnonymous]
+[HttpPost("login")]
+public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
+
+// ✅ GOOD — protected CRUD base
+[Authorize]
+public abstract class BaseController<T>
+```
+
+## Passwords
+
+`PasswordHasher<User>` for hash/verify. Never return `PasswordHash` in DTOs.
+
+## Claims
+
+Token includes `sub` (user id). `Me()` resolves user from `sub` or `NameIdentifier`.
+
+## Registration
+
+Respect `AuthOptions.AllowRegistration`; validate email + password min 8 chars.
