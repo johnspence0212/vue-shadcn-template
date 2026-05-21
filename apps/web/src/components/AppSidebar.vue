@@ -11,12 +11,14 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem
+  SidebarMenuItem,
+  useSidebar
 } from '@/components/ui/sidebar'
 import { Button } from '@/components/ui/button'
 
 const router = useRouter()
 const auth = useAuthStore()
+const { isMobile, setOpen, setOpenMobile } = useSidebar()
 
 const items = [
   { title: 'Home', url: '/', icon: Home },
@@ -27,8 +29,17 @@ const items = [
   { title: 'Settings', url: '/settings', icon: Settings }
 ]
 
+function closeSidebar() {
+  if (isMobile.value) {
+    setOpenMobile(false)
+  } else {
+    setOpen(false)
+  }
+}
+
 function logout() {
   auth.logout()
+  closeSidebar()
   router.push({ name: 'login' })
 }
 </script>
@@ -42,7 +53,7 @@ function logout() {
           <SidebarMenu>
             <SidebarMenuItem v-for="item in items" :key="item.title">
               <SidebarMenuButton as-child>
-                <router-link :to="item.url">
+                <router-link :to="item.url" @click="closeSidebar">
                   <component :is="item.icon" />
                   <span>{{ item.title }}</span>
                 </router-link>
