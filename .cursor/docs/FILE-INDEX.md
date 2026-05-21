@@ -67,6 +67,20 @@ Quick map of key files in the vue-shadcn-template monorepo.
 | `e2e/tests/auth.spec.ts` | Auth flow e2e |
 | `.github/workflows/ci.yml` | api / web / e2e CI jobs |
 
+## Docker (optional deploy)
+
+| File | Role |
+|------|------|
+| `docker-compose.yml` | api + nginx web; SQLite volume |
+| `docker-compose.postgres.yml` | PostgreSQL overlay (needs provider migration) |
+| `.env.docker.example` | Root `.env` template (`JWT_SECRET`, ports, seed) |
+| `.dockerignore` | Build context exclusions |
+| `apps/api/Dockerfile` | Multi-stage API image (root build context) |
+| `apps/web/Dockerfile` | Vite build → nginx |
+| `apps/web/nginx.conf` | SPA routing + `/api` proxy to `api:8080` |
+
+Skill: `run-docker-deploy`. Not used for local dev (use Aspire / `run-dev-environment`).
+
 ## Cursor config
 
 | Path | Role |

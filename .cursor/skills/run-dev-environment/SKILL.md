@@ -6,6 +6,8 @@ disable-model-invocation: false
 
 # Run Dev Environment
 
+**Not Docker.** For containerized deployment, use skill `run-docker-deploy`. Docker has no Vite HMR and is not the default workflow.
+
 ## Preferred: Aspire AppHost
 
 ```bash

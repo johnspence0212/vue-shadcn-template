@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: template
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: templatedb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U template -d templatedb']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    environment:
+      Database__Provider: PostgreSQL
+      Database__ConnectionString: Host=postgres;Port=5432;Database=templatedb;Username=template;Password=${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes: !reset []
+
+volumes:
+  postgres_data:

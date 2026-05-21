@@ -19,6 +19,10 @@ alwaysApply: true
 | Swashbuckle-only (no OpenAPI map) | `MapOpenApi()` + Scalar in dev |
 | `.github/copilot-instructions.md` | `.cursor/rules/` + skills |
 | Open CRUD without auth | `[Authorize]` on `BaseController<T>` |
+| Docker Compose for local dev | Aspire AppHost or standalone api/web |
+| Deploying `aspire/AppHost` to production | `docker compose` (api + web images) |
+| PostgreSQL in Docker without migration | Default SQLite compose, or `add-ef-migration` first |
+| Commit root `.env` / dev `JWT_SECRET` in compose | `.env.docker.example` + user secrets |
 
 ## Examples
 

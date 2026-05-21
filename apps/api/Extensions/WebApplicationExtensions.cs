@@ -19,8 +19,13 @@ public static class WebApplicationExtensions
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler();
-            app.UseHsts();
-            app.UseHttpsRedirection();
+
+            var disableHttpsRedirection = app.Configuration.GetValue<bool>("DisableHttpsRedirection");
+            if (!disableHttpsRedirection)
+            {
+                app.UseHsts();
+                app.UseHttpsRedirection();
+            }
         }
 
         app.UseStatusCodePages();

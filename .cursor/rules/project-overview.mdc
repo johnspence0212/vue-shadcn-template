@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Project Overview
 
-Vue 3 + .NET 9 monorepo. **Aspire AppHost is the default dev entry point.**
+Vue 3 + .NET 9 monorepo. **Aspire AppHost is the default dev entry point.** Docker Compose is optional for deployment only.
 
 ## Layout
 
@@ -15,9 +15,10 @@ vue-shadcn-template/
 ├── apps/api/          # .NET 9 Web API (JWT auth, EF Core, OpenAPI/Scalar)
 ├── apps/api.tests/    # xUnit integration tests
 ├── aspire/
-│   ├── AppHost/       # DistributedApplication orchestration
+│   ├── AppHost/       # DistributedApplication orchestration (dev)
 │   └── ServiceDefaults/
 ├── e2e/               # Playwright (starts api + web)
+├── docker-compose.yml # Optional deploy: api + nginx web
 └── Template.sln
 ```
 
@@ -45,8 +46,17 @@ dotnet run --project apps/api
 cd apps/web && npm run dev
 ```
 
+## Deploy (optional)
+
+```bash
+cp .env.docker.example .env   # set JWT_SECRET
+docker compose up --build     # http://localhost:8080
+```
+
+Not used for local dev. Skill: `run-docker-deploy`.
+
 ## References
 
 - File map: [.cursor/docs/FILE-INDEX.md](../docs/FILE-INDEX.md)
-- Skills: `.cursor/skills/` (`run-dev-environment`, `add-fullstack-entity`, `add-ef-migration`, …)
+- Skills: `.cursor/skills/` (`run-dev-environment`, `run-docker-deploy`, `add-fullstack-entity`, `add-ef-migration`, …)
 - Legacy `AGENTS.md` / `frontend/` / `backend/Api/` paths are **obsolete** — use `apps/*` only.

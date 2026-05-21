@@ -41,6 +41,10 @@ Camel case via `AddJsonOptions`. Entities returned directly from controllers for
 ## Health
 
 - `/health` — Aspire defaults (dev)
-- `/health/ready` — DB check
+- `/health/ready` — DB check (Docker API healthcheck)
+
+## Reverse proxy / Docker
+
+When TLS terminates at nginx or a load balancer, set `DisableHttpsRedirection=true` (see `docker-compose.yml`). Without it, Production enables `UseHttpsRedirection()` and breaks HTTP proxying to the API container.
 
 Do not add Swashbuckle-only setup; use built-in OpenAPI + Scalar.

@@ -29,6 +29,20 @@ Database__Provider=PostgreSQL
 Database__ConnectionString=Host=localhost;Database=template;Username=...
 ```
 
+## Docker Compose
+
+**Default** (`docker-compose.yml`): SQLite at `Data Source=/data/app.db` (volume `api_data`) — works with existing migrations.
+
+**PostgreSQL overlay** requires a new migration first (migrations in repo are SQLite-oriented):
+
+```bash
+dotnet ef migrations add SwitchToPostgreSQL --project apps/api
+# set POSTGRES_PASSWORD in root .env
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml up --build
+```
+
+See skill `run-docker-deploy`.
+
 ## E2E
 
 `e2e/playwright.config.ts` forces Sqlite: `Database__ConnectionString=Data Source=app-e2e.db`

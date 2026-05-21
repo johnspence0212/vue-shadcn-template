@@ -70,6 +70,7 @@ TestResults/
 apps/api/*.db
 apps/api/*.db-*
 apps/web/.env
+.env
 .aspire/
 test-results/
 playwright-report/

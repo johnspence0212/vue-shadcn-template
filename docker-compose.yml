@@ -1,0 +1,43 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      DisableHttpsRedirection: 'true'
+      Database__Provider: Sqlite
+      Database__ConnectionString: Data Source=/data/app.db
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      Jwt__Issuer: ${JWT_ISSUER:-TemplateApi}
+      Jwt__Audience: ${JWT_AUDIENCE:-TemplateWeb}
+      WebOrigin: ${WEB_ORIGIN:-http://localhost:${WEB_PORT:-8080}}
+      WebOrigins__0: ${WEB_ORIGIN:-http://localhost:${WEB_PORT:-8080}}
+      Seed__AdminEmail: ${SEED_ADMIN_EMAIL:-admin@template.local}
+      Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:-AdminPassword123!}
+      Auth__AllowRegistration: ${AUTH_ALLOW_REGISTRATION:-false}
+    volumes:
+      - api_data:/data
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:8080/health/ready']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  api_data:

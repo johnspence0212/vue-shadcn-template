@@ -7,7 +7,8 @@
 
 | I want to… | Use |
 |------------|-----|
-| Run the full stack | Skill: `run-dev-environment` |
+| Run the full stack (dev) | Skill: `run-dev-environment` |
+| Deploy with Docker (optional) | Skill: `run-docker-deploy` |
 | Add a DB entity end-to-end | Skill: `add-fullstack-entity` |
 | Change database provider | Skill: `switch-database-provider` |
 | Add auth / swap to Entra | Skill: `replace-auth` |
@@ -59,10 +60,18 @@ dotnet test apps/api.tests/Api.Tests.csproj
 cd e2e && npm test
 ```
 
+### Docker (optional deploy — not for dev)
+
+```bash
+cp .env.docker.example .env   # set JWT_SECRET
+docker compose up --build
+```
+
 ## Never do
 
 - Use `frontend/`, `backend/Api/` paths (removed)
 - Use Axios or `@effect/schema` (use Effect + `effect/Schema`)
 - Use `EnsureCreated` (use EF migrations)
 - Commit secrets, `.env`, or `*.db` files
+- Use Docker Compose for local dev (use Aspire instead)
 - Add GitHub Copilot files (`copilot-instructions.md`, `.copilot/`)

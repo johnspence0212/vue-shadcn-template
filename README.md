@@ -60,6 +60,30 @@ cd apps/web && cp .env.example .env && npm install && npm run dev
 
 Set `VITE_API_BASE_URL=http://localhost:5000/api` in `apps/web/.env`.
 
+## Docker deployment
+
+Production-style stack: API + nginx (static SPA with `/api` proxy). SQLite data persists in a Docker volume.
+
+```bash
+cp .env.docker.example .env
+# Edit .env — set JWT_SECRET
+
+docker compose up --build
+```
+
+Open `http://localhost:8080` (or your `WEB_PORT`). The API is not exposed directly; nginx proxies `/api` to the backend.
+
+**PostgreSQL:** the default compose file uses SQLite (matches existing EF migrations). For PostgreSQL, add a provider migration first (skill `switch-database-provider`), then:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml up --build
+```
+
+Default seeded admin (override in `.env`):
+
+- Email: `admin@template.local`
+- Password: `AdminPassword123!`
+
 ## Tests
 
 ```bash
